@@ -1,0 +1,44 @@
+#include <dt-bindings/zmk/matrix_transform.h>
+
+/ {
+    chosen {
+        zmk, kscan = &default_kscan;
+        zmk, matrix_transform = &default_transform;
+    };
+    default_kscan: kscan {
+        compatible = "zmk,kscan-gpio-matrix";
+        label = "default_kscan";
+        diode-direction = "col2row";
+
+        row_gpios = <&pro_micro 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+
+        col_gpios = <&pro_micro 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 24 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 23 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+        <&pro_micro 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+
+    }
+    default_transform: matrix_transform{
+        compatible = "zmk,matrix_transform";
+        rows = <4>
+        columns = <7>
+
+         map = <
+RC(2,0)  RC(2,1)  RC(2,2)  RC(2,3)  RC(2,4)  RC(2,5)  RC(2,6)
+
+RC(4,0)  RC(4,1)  RC(4,2)  RC(4,3)  RC(4,4)  RC(4,5)  RC(4,6)
+
+
+RC(6,0)  RC(6,1)  RC(6,2)  RC(6,3)  RC(6,4)  RC(6,5)  RC(6,6)
+
+RC(8,0)  RC(8,1)  RC(8,2)  RC(8,3)  RC(8,4)  RC(8,5)  RC(8,6)
+
+        >;
+    }
+}
