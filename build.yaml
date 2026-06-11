@@ -20,4 +20,4 @@
 ---
 include:
   - board: nice_nano@2.0.0//zmk
-    shield: darling
+    shield: darling2
