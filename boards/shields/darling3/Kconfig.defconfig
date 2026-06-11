@@ -1,0 +1,6 @@
+if SHIELD_DARLING3
+
+config ZMK_KEYBOARD_NAME
+    default "darling3"
+
+endif # SHIELD_DARLING3
