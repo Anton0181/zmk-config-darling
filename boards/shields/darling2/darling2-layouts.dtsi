@@ -7,6 +7,7 @@
 #include <dt-bindings/he/mouse_forwarder.h>
 #include <dt-bindings/he/gamepad_forwarder.h>
 #include <input/he_processors.dtsi>
+#include <physical_layouts.dtsi>
 
 &adc {
     status = "okay";
