@@ -48,7 +48,7 @@
 
 /* 5. Активация всех функциональных узлов из dtsi */
 &central_listener {
-    status = "okay";
+    status = "disabled";
 };
 
 &raw_sp {
