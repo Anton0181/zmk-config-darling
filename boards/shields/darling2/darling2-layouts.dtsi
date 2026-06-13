@@ -1,23 +1,153 @@
-// See https://zmk.dev/docs/development/hardware-integration/physical-layouts
-// for how to configure this.
+/*
+ * Конфигурация HE для Darling2
+ * Основано на архитектуре zmk-config-partialgauss
+ */
 
-#include <physical_layouts.dtsi>
+#include <dt-bindings/zmk/matrix_transform.h>
+#include <dt-bindings/he/mouse_forwarder.h>
+#include <dt-bindings/he/gamepad_forwarder.h>
+#include <input/he_processors.dtsi>
 
-/ {
-    default_layout: default_layout {
-        compatible = "zmk,physical-layout";
-        display-name = "Default Layout";
-        transform = <&default_transform>;
-        kscan = <&kscan>;
+&adc {
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <0>;
 
-        // Edit this to define the positions and sizes of the keys, or remove it
-        // if your keyboard will not support ZMK Studio.
-        // https://zmk.dev/docs/development/hardware-integration/physical-layouts#optional-keys-property
-        keys  //                     w   h    x    y     rot    rx    ry
-            = <&key_physical_attrs 100 100    0    0       0     0     0>
-            , <&key_physical_attrs 100 100  100    0       0     0     0>
-            , <&key_physical_attrs 100 100    0  100       0     0     0>
-            , <&key_physical_attrs 100 100  100  100       0     0     0>
-            ;
+    /* Канал для первого мультиплексора U1 (SIG -> P1.00) */
+    channel@0 {
+        reg = <0>;
+        zephyr,input-positive = <NRF_SAADC_AIN0>; // Проверьте соответствие P1.00 в вашем контроллере
+        zephyr,gain = "ADC_GAIN_1_2";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+        zephyr,resolution = <12>;
+    };
+
+    /* Канал для второго мультиплексора U2 (SIG -> P1.01) */
+    channel@1 {
+        reg = <1>;
+        zephyr,input-positive = <NRF_SAADC_AIN1>; // Проверьте соответствие P1.01 в вашем контроллере
+        zephyr,gain = "ADC_GAIN_1_2";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+        zephyr,resolution = <12>;
     };
 };
+
+/* Фильтр для сглаживания шумов ADC (из partialgauss) */
+&raw_sp {
+    matrix-size = <2 14>; // 2 мультиплексора, до 14 клавиш на каждый (итого 28)
+    working-area = <250 3050>;
+    filter-coefficients = <0x3ca485df 0x3d2485df 0x3ca485df 0x3f800000 0xbfc7cf71 0x3f242f9d>;
+};
+
+/* Обработка проброса клавиш */
+&he_pass {
+    kscan-passthrough-position = <2700>;
+    keymap-size = <4>; // Количество ваших слоев
+};
+
+&rt_pass {
+    keymap-size = <4>;
+};
+
+/ {
+    /* Общий композитный сканер: объединяет ADC и селектор */
+    kscan: kscan {
+        compatible = "zmk,kscan-composite";
+        wakeup-source;
+        rows = <4>;
+        columns = <7>;
+
+        /* Секция ADC: считывание значений с сенсоров */
+        adc-direct {
+            kscan = <&kscan_adc>;
+            row-offset = <0>;
+            col-offset = <0>;
+        };
+
+        /* Секция Селектора: управление пинами S0-S3 */
+        select-switches {
+            kscan = <&kscan_selector>;
+            row-offset = <0>;
+            col-offset = <0>;
+        };
+    };
+
+    /* Настройка самого ADC сканера (pulsed mode) */
+    kscan_adc: kscan-adc {
+        compatible = "he,kscan-direct-pulsed";
+        resolution = <12>;
+        pulse-read;
+        read-turn-on-time = <50>;
+        wait-period-idle = <5>;
+        wait-period-press = <1>;
+        kscan-forwarder = <&kscan_forwarder>;
+        pulse-set-forwarder = <&pulse_set_forwarder>;
+
+        /* U1: Пин включения P0.03 */
+        kscan_adc_top: top {
+            enable-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>; 
+            switch-height = <3300>;
+        };
+
+        /* U2: Пин включения P0.02 */
+        kscan_adc_bot: bot {
+            enable-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+            switch-height = <3300>;
+        };
+    };
+
+    /* Селектор: управление каналами мультиплексора S0-S3 */
+    kscan_selector: kscan-selector {
+        compatible = "zmk,kscan-gpio-direct"; 
+        // Здесь библиотека сама будет переключать пины, указанные в kscan_gpio
+    };
+
+    /* Слушатель ввода: превращает аналоговый сигнал в нажатие клавиши */
+    central_listener: central_listener {
+        compatible = "he,input-listener";
+        device = <&kscan_adc>;
+        input-processors = <&raw_sp>;
+        
+        /* Создаем по одному процессору на каждый слой вашей клавиатуры */
+        layer0 { layers = <0>; input-processors = <&he_keymap 0>; };
+        layer1 { layers = <1>; input-processors = <&he_keymap 1>; };
+        layer2 { layers = <2>; input-processors = <&he_keymap 2>; };
+        layer3 { layers = <3>; input-processors = <&he_keymap 3>; };
+    };
+
+    /* Форвардер для пульсирующего режима */
+    pulse_set_forwarder: pulse-set-forwarder {
+        compatible = "he,pulse-set-forwarder";
+    };
+};
+
+
+// // See https://zmk.dev/docs/development/hardware-integration/physical-layouts
+// // for how to configure this.
+
+// #include <dt-bindings/zmk/matrix_transform.h>
+// #include <dt-bindings/he/mouse_forwarder.h>
+// #include <dt-bindings/he/gamepad_forwarder.h>
+// #include <input/he_processors.dtsi>
+// #include <physical_layouts.dtsi>
+
+// / {
+//     default_layout: default_layout {
+//         compatible = "zmk,physical-layout";
+//         display-name = "Default Layout";
+//         transform = <&default_transform>;
+//         kscan = <&kscan>;
+
+//         // Edit this to define the positions and sizes of the keys, or remove it
+//         // if your keyboard will not support ZMK Studio.
+//         // https://zmk.dev/docs/development/hardware-integration/physical-layouts#optional-keys-property
+//         keys  //                     w   h    x    y     rot    rx    ry
+//             = <&key_physical_attrs 100 100    0    0       0     0     0>
+//             , <&key_physical_attrs 100 100  100    0       0     0     0>
+//             , <&key_physical_attrs 100 100    0  100       0     0     0>
+//             , <&key_physical_attrs 100 100  100  100       0     0     0>
+//             ;
+//     };
+// };
