@@ -1,4 +1,4 @@
-#include "darling2_he.dtsi"
+#include "darling2-layout.dtsi"
 
 /* Привязываем пины S0-S3 к селектору */
 &kscan_gpio {
