@@ -193,7 +193,7 @@
     /* ЦЕНТРАЛЬНЫЙ СЛУШАТЕЛЬ (Связывает ADC с LAYERS) */
     central_listener: central_listener {
         compatible = "he,input-listener";
-        priority = <0>; 
+       
         device = <&kscan_adc>;
         input-processors = <&raw_sp>;
         
