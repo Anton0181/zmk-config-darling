@@ -3,7 +3,7 @@
  * Structure based on zmk-config-partialgauss
  */
 
-#include "darling2.dtsi"
+#include "darling2-layouts.dtsi"
 
 /* 1. Пины выбора канала (S0, S1, S2, S3) */
 &kscan_gpio {
