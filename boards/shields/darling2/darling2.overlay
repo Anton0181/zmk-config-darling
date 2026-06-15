@@ -14,7 +14,28 @@
         , <&gpio0 7 GPIO_ACTIVE_HIGH> // S3
         ;
 };
+&kscan_mech {
+   // Replace these comments with the GPIO pins in the matrix.
+        // See https://zmk.dev/docs/development/hardware-integration/new-shield#shield-overlays
+        compatible = "zmk,kscan-gpio-matrix";
+        diode-direction = "col2row";
+        wakeup-source;
+        col-gpios =
+            <&pro_micro 6 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 7 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 8 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 9 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 10 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 16 GPIO_ACTIVE_HIGH>,
+            <&pro_micro 14 GPIO_ACTIVE_HIGH>;
+            
+        row-gpios =
+            <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+            <&pro_micro 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+            <&pro_micro 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
+            <&pro_micro 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 
+};
 /* 2. Калибровка первого мультиплексора U1 (Верхний) */
 &kscan_adc_top {
     first {
@@ -36,6 +57,39 @@
         calibration-max = <3000>;
     };
 };
+/* 2. Узел только для пинов S0-S3 мультиплексора (теперь это просто GPIO) */
+    kscan_mux_pins: kscan_mux_pins {
+        compatible = "zmk,kscan-gpio-direct";
+        // Эти пины будут использоваться драйвером kscan_adc для переключения каналов
+        col-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>, <&gpio0 5 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>, <&gpio0 7 GPIO_ACTIVE_HIGH>;
+    };
+
+    /* 3. ОБЪЕДИНЕННЫЙ СКАНЕР (Composite) */
+    kscan: kscan0 {
+        compatible = "zmk,kscan-composite";
+        wakeup-source;
+        rows = <4>;
+        columns = <7>;
+
+        /* Механическая часть */
+        gpio-matrix {
+            kscan = <&kscan_mech>;
+            row-offset = <0>;
+            col-offset = <0>;
+        };
+        /* HE часть */
+        adc-direct {
+            kscan = <&kscan_adc>;
+            row-offset = <0>;
+            col-offset = <0>;
+        };
+        /* Управление мультиплексором */
+        select-switches {
+            kscan = <&kscan_mux_pins>;
+            row-offset = <0>;
+            col-offset = <0>;
+        };
+    };
 
 /* 4. Пины управления включением мультиплексоров (EN) */
 &kscan_selector {
