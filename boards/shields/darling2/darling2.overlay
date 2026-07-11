@@ -4,15 +4,31 @@
  */
 
 #include "darling2-layouts.dtsi"
-
+/* 1. Пины выбора канала MUX (S0-S3) - SuperMini nRF52840 mapping:
+ *    S0 -> P1.01 (gpio1 9)  (внимание: 1-based в задаче, 0-based в DTS)
+ *    S1 -> P1.02 (gpio1 10)
+ *    S2 -> P1.07 (gpio1 15)
+ *    S3 -> P0.31 (gpio0 31)
 /* 1. Пины выбора канала (S0, S1, S2, S3) */
-&kscan_gpio {
-    col-gpios
-        = <&pro_micro 11 GPIO_ACTIVE_HIGH> // S0
-        , <&pro_micro 12 GPIO_ACTIVE_HIGH> // S1
-        , <&pro_micro 13 GPIO_ACTIVE_HIGH> // S2
-        , <&pro_micro 21 GPIO_ACTIVE_HIGH> // S3
+&kscan_selector {
+    input-gpios
+        = <&gpio1 9  GPIO_ACTIVE_HIGH>   /* S0 -> P1.01 */
+        , <&gpio1 10 GPIO_ACTIVE_HIGH>   /* S1 -> P1.02 */
+        , <&gpio1 15 GPIO_ACTIVE_HIGH>   /* S2 -> P1.07 */
+        , <&gpio0 31 GPIO_ACTIVE_HIGH>   /* S3 -> P0.31 */
         ;
+};
+/* 2. ADC каналы для двух MUX */
+&kscan_adc_top {
+    io-channels = <&adc 0>;   /* MUX1 SIG -> P0.02 (AIN0) */
+    calibration-min = <2000>;
+    calibration-max = <3000>;
+};
+
+&kscan_adc_bot {
+    io-channels = <&adc 5>;   /* MUX2 SIG -> P0.29 (AIN5) */
+    calibration-min = <2000>;
+    calibration-max = <3000>;
 };
 &kscan_mech {
    // Replace these comments with the GPIO pins in the matrix.
@@ -36,27 +52,7 @@
             <&pro_micro 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 
 };
-/* 2. Калибровка первого мультиплексора U1 (Верхний) */
-&kscan_adc_top {
-    first {
-        io-channels = <&adc 0>; // SIG U1 -> P1.00
-        /* Значения подбираются в процессе калибровки */
-        calibration-min = <2000>; 
-        calibration-max = <3000>;
-    };
-    /* Если библиотека требует раздельной калибровки для каждой клавиши, 
-       здесь добавляются second, third и т.д. */
-};
 
-/* 3. Калибровка второго мультиплексора U2 (Нижний) */
-&kscan_adc_bot {
-    first {
-        io-channels = <&adc 1>; // SIG U2 -> P1.01
-        /* Значения подбираются в процессе калибровки */
-        calibration-min = <2000>; 
-        calibration-max = <3000>;
-    };
-};
 /* 2. Узел только для пинов S0-S3 мультиплексора (теперь это просто GPIO) */
     kscan_mux_pins: kscan_mux_pins {
         compatible = "zmk,kscan-gpio-direct";
