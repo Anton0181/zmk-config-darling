@@ -1,8 +1,7 @@
 /*
- * Darling2 Layouts — гибрид HE (через MUX) + MECH свичи
- * Композитная матрица: 6 rows × 16 cols
- *   rows 0-3: мех-свичи (4×7 = 28 кнопок)
- *   rows 4-5: HE через MUX (2×16 = 32 кнопки макс)
+ * DarlingV2 — SuperMini nRF52840 + 2×CD74HC4067
+ * Гибридная клавиатура: 28 клавиш, каждая с мех-свичем + HE-сенсором
+ * Раскладка: 6 рядов в physical_layout, но матрица 6×16 для совместимости с MUX
  */
 
 #include <dt-bindings/zmk/matrix_transform.h>
@@ -11,6 +10,9 @@
 #include <input/he_processors.dtsi>
 #include <physical_layouts.dtsi>
 
+/* ============================================
+ * ADC: 2 канала для 2 мультиплексоров
+ * ============================================ */
 &adc {
     status = "okay";
     #address-cells = <1>;
@@ -18,7 +20,7 @@
 
     channel@0 {
         reg = <0>;
-        zephyr,input-positive = <NRF_SAADC_AIN0>;  /* P0.02 — MUX1 SIG */
+        zephyr,input-positive = <NRF_SAADC_AIN0>;  /* P0.02 */
         zephyr,gain = "ADC_GAIN_1_2";
         zephyr,reference = "ADC_REF_INTERNAL";
         zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
@@ -27,7 +29,7 @@
 
     channel@5 {
         reg = <5>;
-        zephyr,input-positive = <NRF_SAADC_AIN5>;  /* P0.29 — MUX2 SIG */
+        zephyr,input-positive = <NRF_SAADC_AIN5>;  /* P0.29 */
         zephyr,gain = "ADC_GAIN_1_2";
         zephyr,reference = "ADC_REF_INTERNAL";
         zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
@@ -36,7 +38,7 @@
 };
 
 &raw_sp {
-    matrix-size = <2 16>;
+    matrix-size = <2 14>;   /* 2 MUX × 14 каналов = 28 HE */
     working-area = <250 3050>;
     filter-coefficients = <0x3ca485df 0x3d2485df 0x3ca485df 0x3f800000 0xbfc7cf71 0x3f242f9d>;
 };
@@ -69,75 +71,75 @@
         zmk,physical-layout = &physical_layout0;
     };
 
-    /* ===== МЕХАНИЧЕСКИЕ СВИЧИ ===== */
+    /* ============================================
+     * МЕХАНИЧЕСКИЕ СВИЧИ (4×7 = 28 кнопок)
+     * Используются ВСЕ 28 позиций матрицы
+     * ============================================ */
     kscan_mech: kscan_mech {
         compatible = "zmk,kscan-gpio-matrix";
         diode-direction = "col2row";
         wakeup-source;
     };
 
-    /* ===== MUX S0-S3 ===== */
-    kscan_selector: kscan-selector {
-        compatible = "zmk,kscan-gpio-direct";
-    };
-
-    /* ===== ADC сканер для 2 MUX ===== */
-    pulse_set_forwarder: pulse-set-forwarder {
-        compatible = "he,pulse-set-forwarder";
-    };
-
-    kscan_adc: kscan-adc {
-        compatible = "he,kscan-direct-pulsed";
+    /* ============================================
+     * HE через 2×CD74HC4067 (28 кнопок)
+     * ============================================ */
+    kscan_mux: kscan-mux {
+        compatible = "he,kscan-multiplexer";
         resolution = <12>;
-        pulse-read;
-        read-turn-on-time = <50>;
         wait-period-idle = <5>;
         wait-period-press = <1>;
         kscan-forwarder = <&kscan_forwarder>;
-        pulse-set-forwarder = <&pulse_set_forwarder>;
+        
+        default-calibration-min = <2000>;
+        default-calibration-max = <3000>;
+        default-deadzone-top = <250>;
+        default-deadzone-bottom = <250>;
 
-        kscan_adc_top: top {
+        /* MUX1: 14 каналов (0-13) */
+        mux0: mux@0 {
+            io-channels = <&adc 0>;
+            address-range-min = <0>;
+            address-range-max = <13>;
             switch-height = <3300>;
         };
-        kscan_adc_bot: bot {
+
+        /* MUX2: 14 каналов (0-13) */
+        mux1: mux@1 {
+            io-channels = <&adc 5>;
+            address-range-min = <0>;
+            address-range-max = <13>;
             switch-height = <3300>;
         };
     };
 
-    /* ===== Композитный сканер =====
-     * 6 строк × 16 колонок.
-     * Мех-блок занимает rows 0-3 (по 7 колонок используется).
-     * HE-блок занимает rows 4-5 (по 16 каналов).
-     * 
-     * Чтобы не было конфликтов, физический layout должен
-     * иметь entries для ВСЕХ 6×16 = 96 позиций (часть пустые). */
+    /* ============================================
+     * Композитный сканер
+     * Размеры 6×16 (для совместимости с MUX)
+     *   rows 0-3: мех-свичи (4×7)
+     *   rows 4-5: HE через MUX (2×16, но исп. только 14)
+     * ============================================ */
     kscan: kscan0 {
         compatible = "zmk,kscan-composite";
         wakeup-source;
         rows = <6>;
         columns = <16>;
 
-        /* Мех-свичи: 4 строки */
         gpio-matrix {
             kscan = <&kscan_mech>;
             row-offset = <0>;
             col-offset = <0>;
         };
-        /* HE через MUX: 2 строки, начинаем с row 4 */
         adc-direct {
-            kscan = <&kscan_adc>;
-            row-offset = <4>;
-            col-offset = <0>;
-        };
-        /* Управление S0-S3 */
-        select-switches {
-            kscan = <&kscan_selector>;
+            kscan = <&kscan_mux>;
             row-offset = <0>;
             col-offset = <0>;
         };
     };
 
-    /* ===== SOCD и прочее ===== */
+    /* ============================================
+     * SOCD и прочее
+     * ============================================ */
     socd_d: he-socd1 {
         compatible = "he,input-processor-socd";
         #input-processor-cells = <1>;
@@ -160,9 +162,9 @@
         rows = <2>;
         map = <
             RC(0,0)  RC(0,1)  RC(0,2)  RC(0,3)  RC(0,4)  RC(0,5)  RC(0,6)  RC(0,7)
-            RC(0,8)  RC(0,9)  RC(0,10) RC(0,11) RC(0,12) RC(0,13) RC(0,14) RC(0,15)
+            RC(0,8)  RC(0,9)  RC(0,10) RC(0,11) RC(0,12) RC(0,13) _______  _______
             RC(1,0)  RC(1,1)  RC(1,2)  RC(1,3)  RC(1,4)  RC(1,5)  RC(1,6)  RC(1,7)
-            RC(1,8)  RC(1,9)  RC(1,10) RC(1,11) RC(1,12) RC(1,13) RC(1,14) RC(1,15)
+            RC(1,8)  RC(1,9)  RC(1,10) RC(1,11) RC(1,12) RC(1,13) _______  _______
         >;
     };
 
@@ -174,7 +176,7 @@
 
     central_listener: central_listener {
         compatible = "he,input-listener";
-        device = <&kscan_adc>;
+        device = <&kscan_mux>;
         input-processors = <&raw_sp>;
 
         layer0 { layers = <0>; input-processors = <&he_keymap 0>; };
@@ -183,127 +185,55 @@
         layer3 { layers = <3>; input-processors = <&he_keymap 3>; };
     };
 
-    /* ===== Физический layout =====
-     * 6 строк × 16 колонок = 96 позиций. 
-     * Строки 0-3: мех-свичи (4×7=28 кнопок, остальные 9 колонок пустые)
-     * Строки 4-5: HE через MUX (2×16=32 кнопки)
-     * 
-     * ⚠️ ПОДСТАВЬТЕ реальные координаты ваших клавиш! */
+    /* ============================================
+     * Физический layout (DarlingV2, 28 клавиш)
+     * ============================================ */
     physical_layout0: physical_layout_0 {
         compatible = "zmk,physical-layout";
         display-name = "Darling2 Default";
         kscan = <&kscan>;
         transform = <&default_transform>;
-
+        
         keys = 
-            /* ===== Row 0: мех-свичи (7 кнопок) ===== */
-            <&key_physical_attrs 100 100    0   0  0  0  0>
-            , <&key_physical_attrs 100 100  100   0  0  0  0>
-            , <&key_physical_attrs 100 100  200   0  0  0  0>
-            , <&key_physical_attrs 100 100  300   0  0  0  0>
-            , <&key_physical_attrs 100 100  400   0  0  0  0>
-            , <&key_physical_attrs 100 100  500   0  0  0  0>
-            , <&key_physical_attrs 100 100  600   0  0  0  0>
-            /* пустые позиции cols 7-15 в строке 0 */
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
+            /* Row 0: Tab, Q, W, E, R, T, Y */
+            <&key_physical_attrs 100 100   50  100  0  0  0>
+            , <&key_physical_attrs 100 100 150  100  0  0  0>
+            , <&key_physical_attrs 100 100 250  100  0  0  0>
+            , <&key_physical_attrs 100 100 350  100  0  0  0>
+            , <&key_physical_attrs 100 100 450  100  0  0  0>
+            , <&key_physical_attrs 100 100 550  100  0  0  0>
+            , <&key_physical_attrs 100 100 650  100  0  0  0>
 
-            /* ===== Row 1: мех-свичи ===== */
-            , <&key_physical_attrs 100 100    0 100  0  0  0>
-            , <&key_physical_attrs 100 100  100 100  0  0  0>
-            , <&key_physical_attrs 100 100  200 100  0  0  0>
-            , <&key_physical_attrs 100 100  300 100  0  0  0>
-            , <&key_physical_attrs 100 100  400 100  0  0  0>
-            , <&key_physical_attrs 100 100  500 100  0  0  0>
-            , <&key_physical_attrs 100 100  600 100  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
+            /* Row 1: caps, A, S, D, F, G, H */
+            , <&key_physical_attrs 100 100   50  200  0  0  0>
+            , <&key_physical_attrs 100 100 150  200  0  0  0>
+            , <&key_physical_attrs 100 100 250  200  0  0  0>
+            , <&key_physical_attrs 100 100 350  200  0  0  0>
+            , <&key_physical_attrs 100 100 450  200  0  0  0>
+            , <&key_physical_attrs 100 100 550  200  0  0  0>
+            , <&key_physical_attrs 100 100 650  200  0  0  0>
 
-            /* ===== Row 2: мех-свичи ===== */
-            , <&key_physical_attrs 100 100    0 200  0  0  0>
-            , <&key_physical_attrs 100 100  100 200  0  0  0>
-            , <&key_physical_attrs 100 100  200 200  0  0  0>
-            , <&key_physical_attrs 100 100  300 200  0  0  0>
-            , <&key_physical_attrs 100 100  400 200  0  0  0>
-            , <&key_physical_attrs 100 100  500 200  0  0  0>
-            , <&key_physical_attrs 100 100  600 200  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
+            /* Row 2: shift, Z, X, C, V, B */
+            , <&key_physical_attrs 100 100   50  300  0  0  0>
+            , <&key_physical_attrs 100 100 150  300  0  0  0>
+            , <&key_physical_attrs 100 100 250  300  0  0  0>
+            , <&key_physical_attrs 100 100 350  300  0  0  0>
+            , <&key_physical_attrs 100 100 450  300  0  0  0>
+            , <&key_physical_attrs 100 100 550  300  0  0  0>
 
-            /* ===== Row 3: мех-свичи ===== */
-            , <&key_physical_attrs 100 100    0 300  0  0  0>
-            , <&key_physical_attrs 100 100  100 300  0  0  0>
-            , <&key_physical_attrs 100 100  200 300  0  0  0>
-            , <&key_physical_attrs 100 100  300 300  0  0  0>
-            , <&key_physical_attrs 100 100  400 300  0  0  0>
-            , <&key_physical_attrs 100 100  500 300  0  0  0>
-            , <&key_physical_attrs 100 100  600 300  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
-            , <&key_physical_attrs   0   0    0   0  0  0  0>
+            /* Row 3: ctrl, alt, win, Up, Down */
+            , <&key_physical_attrs 100 100   50  400  0  0  0>
+            , <&key_physical_attrs 100 100 150  400  0  0  0>
+            , <&key_physical_attrs 100 100 250  400  0  0  0>
+            , <&key_physical_attrs 100 100 350  400  0  0  0>
+            , <&key_physical_attrs 100 100 450  400  0  0  0>
 
-            /* ===== Row 4: MUX1 (16 каналов) ===== */
-            , <&key_physical_attrs 100 100    0 400  0  0  0>
-            , <&key_physical_attrs 100 100  100 400  0  0  0>
-            , <&key_physical_attrs 100 100  200 400  0  0  0>
-            , <&key_physical_attrs 100 100  300 400  0  0  0>
-            , <&key_physical_attrs 100 100  400 400  0  0  0>
-            , <&key_physical_attrs 100 100  500 400  0  0  0>
-            , <&key_physical_attrs 100 100  600 400  0  0  0>
-            , <&key_physical_attrs 100 100  700 400  0  0  0>
-            , <&key_physical_attrs 100 100  800 400  0  0  0>
-            , <&key_physical_attrs 100 100  900 400  0  0  0>
-            , <&key_physical_attrs 100 100 1000 400  0  0  0>
-            , <&key_physical_attrs 100 100 1100 400  0  0  0>
-            , <&key_physical_attrs 100 100 1200 400  0  0  0>
-            , <&key_physical_attrs 100 100 1300 400  0  0  0>
-            , <&key_physical_attrs 100 100 1400 400  0  0  0>
-            , <&key_physical_attrs 100 100 1500 400  0  0  0>
+            /* Row 4: N (повёрнутая, 30° вокруг (650, 425)) */
+            , <&key_physical_attrs 100 100  650  350  3000  650  425>
 
-            /* ===== Row 5: MUX2 (16 каналов) ===== */
-            , <&key_physical_attrs 100 100    0 500  0  0  0>
-            , <&key_physical_attrs 100 100  100 500  0  0  0>
-            , <&key_physical_attrs 100 100  200 500  0  0  0>
-            , <&key_physical_attrs 100 100  300 500  0  0  0>
-            , <&key_physical_attrs 100 100  400 500  0  0  0>
-            , <&key_physical_attrs 100 100  500 500  0  0  0>
-            , <&key_physical_attrs 100 100  600 500  0  0  0>
-            , <&key_physical_attrs 100 100  700 500  0  0  0>
-            , <&key_physical_attrs 100 100  800 500  0  0  0>
-            , <&key_physical_attrs 100 100  900 500  0  0  0>
-            , <&key_physical_attrs 100 100 1000 500  0  0  0>
-            , <&key_physical_attrs 100 100 1100 500  0  0  0>
-            , <&key_physical_attrs 100 100 1200 500  0  0  0>
-            , <&key_physical_attrs 100 100 1300 500  0  0  0>
-            , <&key_physical_attrs 100 100 1400 500  0  0  0>
-            , <&key_physical_attrs 100 100 1500 500  0  0  0>
+            /* Row 5: Space (x=-1), Return */
+            , <&key_physical_attrs 100 100  -50  450  0  0  0>
+            , <&key_physical_attrs 100 100   50  450  0  0  0>
             ;
     };
 
@@ -312,18 +242,18 @@
         columns = <16>;
         rows = <6>;
         map = <
-            RC(0,0)  RC(0,1)  RC(0,2)  RC(0,3)  RC(0,4)  RC(0,5)  RC(0,6)  RC(0,7)
-            RC(0,8)  RC(0,9)  RC(0,10) RC(0,11) RC(0,12) RC(0,13) RC(0,14) RC(0,15)
-            RC(1,0)  RC(1,1)  RC(1,2)  RC(1,3)  RC(1,4)  RC(1,5)  RC(1,6)  RC(1,7)
-            RC(1,8)  RC(1,9)  RC(1,10) RC(1,11) RC(1,12) RC(1,13) RC(1,14) RC(1,15)
-            RC(2,0)  RC(2,1)  RC(2,2)  RC(2,3)  RC(2,4)  RC(2,5)  RC(2,6)  RC(2,7)
-            RC(2,8)  RC(2,9)  RC(2,10) RC(2,11) RC(2,12) RC(2,13) RC(2,14) RC(2,15)
-            RC(3,0)  RC(3,1)  RC(3,2)  RC(3,3)  RC(3,4)  RC(3,5)  RC(3,6)  RC(3,7)
-            RC(3,8)  RC(3,9)  RC(3,10) RC(3,11) RC(3,12) RC(3,13) RC(3,14) RC(3,15)
-            RC(4,0)  RC(4,1)  RC(4,2)  RC(4,3)  RC(4,4)  RC(4,5)  RC(4,6)  RC(4,7)
-            RC(4,8)  RC(4,9)  RC(4,10) RC(4,11) RC(4,12) RC(4,13) RC(4,14) RC(4,15)
-            RC(5,0)  RC(5,1)  RC(5,2)  RC(5,3)  RC(5,4)  RC(5,5)  RC(5,6)  RC(5,7)
-            RC(5,8)  RC(5,9)  RC(5,10) RC(5,11) RC(5,12) RC(5,13) RC(5,14) RC(5,15)
+            /* Row 0: 7 клавиш */
+            RC(0,0) RC(0,1) RC(0,2) RC(0,3) RC(0,4) RC(0,5) RC(0,6) _______ _______ _______ _______ _______ _______ _______ _______ _______
+            /* Row 1: 7 клавиш */
+            RC(1,0) RC(1,1) RC(1,2) RC(1,3) RC(1,4) RC(1,5) RC(1,6) _______ _______ _______ _______ _______ _______ _______ _______ _______
+            /* Row 2: 6 клавиш */
+            RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
+            /* Row 3: 5 клавиш */
+            RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,4) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
+            /* Row 4: 1 клавиша (N) */
+            RC(4,11) ______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
+            /* Row 5: 2 клавиши (Space, Return) */
+            RC(5,12) RC(5,13) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
         >;
     };
 };

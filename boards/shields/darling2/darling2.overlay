@@ -1,24 +1,7 @@
-/*
- * Darling2 Hardware Overlay — SuperMini nRF52840
- * 
- * Матрица мех-свичей: 4 rows × 7 cols = 28 клавиш
- * ROW 2 -> P0.17, ROW 4 -> P0.20, ROW 6 -> P0.22, ROW 8 -> P0.24
- * COL 0 -> P1.00, COL 1 -> P0.11, COL 2 -> P1.04, COL 3 -> P1.06,
- * COL 4 -> P0.09, COL 5 -> P0.10, COL 6 -> P1.11
- * 
- * MUX: 2×CD74HC4067
- *   MUX1 SIG -> P0.02 (AIN0), MUX2 SIG -> P0.29 (AIN5)
- *   S0 -> P1.01, S1 -> P1.02, S2 -> P1.07, S3 -> P0.31
- *   EN обоих MUX -> GND (всегда включены)
- */
-
 #include "darling2-layouts.dtsi"
 
 /* ============================================
- * 1. Мех-свичи (GPIO матрица)
- *    diode-direction = "col2row":
- *      - col-gpios = аноды (выходят HIGH при сканировании)
- *      - row-gpios = катоды (читаются с pull-down)
+ * МЕХАНИЧЕСКИЕ СВИЧИ (4×7 = 28 кнопок)
  * ============================================ */
 &kscan_mech {
     col-gpios
@@ -39,34 +22,19 @@
 };
 
 /* ============================================
- * 2. Управление адресными пинами MUX (S0-S3)
+ * АДРЕСНЫЕ ПИНЫ MUX (S0-S3) - LSB -> MSB
  * ============================================ */
-&kscan_selector {
-    input-gpios
-        = <&gpio1  9 GPIO_ACTIVE_HIGH>   /* S0 -> P1.01 */
+&kscan_mux {
+    address-gpios
+        = <&gpio1  9 GPIO_ACTIVE_HIGH>   /* S0 -> P1.01 (LSB) */
         , <&gpio1 10 GPIO_ACTIVE_HIGH>   /* S1 -> P1.02 */
         , <&gpio1 15 GPIO_ACTIVE_HIGH>   /* S2 -> P1.07 */
-        , <&gpio0 31 GPIO_ACTIVE_HIGH>   /* S3 -> P0.31 */
+        , <&gpio0 31 GPIO_ACTIVE_HIGH>   /* S3 -> P0.31 (MSB) */
         ;
 };
 
 /* ============================================
- * 3. ADC привязка к каналам (HE свичи)
- * ============================================ */
-&kscan_adc_top {
-    io-channels = <&adc 0>;   /* MUX1 SIG -> AIN0 (P0.02) */
-    calibration-min = <2000>;
-    calibration-max = <3000>;
-};
-
-&kscan_adc_bot {
-    io-channels = <&adc 5>;   /* MUX2 SIG -> AIN5 (P0.29) */
-    calibration-min = <2000>;
-    calibration-max = <3000>;
-};
-
-/* ============================================
- * 4. Активация функциональных узлов
+ * Активация
  * ============================================ */
 &central_listener { status = "okay"; };
 &he_transform    { status = "okay"; };
