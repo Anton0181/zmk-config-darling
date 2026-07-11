@@ -8,10 +8,10 @@
 /* 1. Пины выбора канала (S0, S1, S2, S3) */
 &kscan_gpio {
     col-gpios
-        = <&gpio0 4 GPIO_ACTIVE_HIGH> // S0
-        , <&gpio0 5 GPIO_ACTIVE_HIGH> // S1
-        , <&gpio0 6 GPIO_ACTIVE_HIGH> // S2
-        , <&gpio0 7 GPIO_ACTIVE_HIGH> // S3
+        = <&pro_micro 11 GPIO_ACTIVE_HIGH> // S0
+        , <&pro_micro 12 GPIO_ACTIVE_HIGH> // S1
+        , <&pro_micro 13 GPIO_ACTIVE_HIGH> // S2
+        , <&pro_micro 21 GPIO_ACTIVE_HIGH> // S3
         ;
 };
 &kscan_mech {
@@ -61,7 +61,7 @@
     kscan_mux_pins: kscan_mux_pins {
         compatible = "zmk,kscan-gpio-direct";
         // Эти пины будут использоваться драйвером kscan_adc для переключения каналов
-        col-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>, <&gpio0 5 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>, <&gpio0 7 GPIO_ACTIVE_HIGH>;
+        col-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>, <&gpio1 5 GPIO_ACTIVE_HIGH>, <&gpio1 6 GPIO_ACTIVE_HIGH>, <&gpio1 7 GPIO_ACTIVE_HIGH>;
     };
 
     /* 3. ОБЪЕДИНЕННЫЙ СКАНЕР (Composite) */
