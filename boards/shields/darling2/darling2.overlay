@@ -1,114 +1,74 @@
 /*
- * Darling2 Hardware Overlay
- * Structure based on zmk-config-partialgauss
+ * Darling2 Hardware Overlay — SuperMini nRF52840
+ * 
+ * Матрица мех-свичей: 4 rows × 7 cols = 28 клавиш
+ * ROW 2 -> P0.17, ROW 4 -> P0.20, ROW 6 -> P0.22, ROW 8 -> P0.24
+ * COL 0 -> P1.00, COL 1 -> P0.11, COL 2 -> P1.04, COL 3 -> P1.06,
+ * COL 4 -> P0.09, COL 5 -> P0.10, COL 6 -> P1.11
+ * 
+ * MUX: 2×CD74HC4067
+ *   MUX1 SIG -> P0.02 (AIN0), MUX2 SIG -> P0.29 (AIN5)
+ *   S0 -> P1.01, S1 -> P1.02, S2 -> P1.07, S3 -> P0.31
+ *   EN обоих MUX -> GND (всегда включены)
  */
 
 #include "darling2-layouts.dtsi"
-/* 1. Пины выбора канала MUX (S0-S3) - SuperMini nRF52840 mapping:
- *    S0 -> P1.01 (gpio1 9)  (внимание: 1-based в задаче, 0-based в DTS)
- *    S1 -> P1.02 (gpio1 10)
- *    S2 -> P1.07 (gpio1 15)
- *    S3 -> P0.31 (gpio0 31)
-/* 1. Пины выбора канала (S0, S1, S2, S3) */
+
+/* ============================================
+ * 1. Мех-свичи (GPIO матрица)
+ *    diode-direction = "col2row":
+ *      - col-gpios = аноды (выходят HIGH при сканировании)
+ *      - row-gpios = катоды (читаются с pull-down)
+ * ============================================ */
+&kscan_mech {
+    col-gpios
+        = <&gpio1  8 GPIO_ACTIVE_HIGH>   /* COL 0 -> P1.00 */
+        , <&gpio0 11 GPIO_ACTIVE_HIGH>   /* COL 1 -> P0.11 */
+        , <&gpio1 12 GPIO_ACTIVE_HIGH>   /* COL 2 -> P1.04 */
+        , <&gpio1 14 GPIO_ACTIVE_HIGH>   /* COL 3 -> P1.06 */
+        , <&gpio0  9 GPIO_ACTIVE_HIGH>   /* COL 4 -> P0.09 */
+        , <&gpio0 10 GPIO_ACTIVE_HIGH>   /* COL 5 -> P0.10 */
+        , <&gpio1 19 GPIO_ACTIVE_HIGH>   /* COL 6 -> P1.11 */
+        ;
+    row-gpios
+        = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* ROW 2 -> P0.17 */
+        , <&gpio0 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* ROW 4 -> P0.20 */
+        , <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* ROW 6 -> P0.22 */
+        , <&gpio0 24 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>   /* ROW 8 -> P0.24 */
+        ;
+};
+
+/* ============================================
+ * 2. Управление адресными пинами MUX (S0-S3)
+ * ============================================ */
 &kscan_selector {
     input-gpios
-        = <&gpio1 9  GPIO_ACTIVE_HIGH>   /* S0 -> P1.01 */
+        = <&gpio1  9 GPIO_ACTIVE_HIGH>   /* S0 -> P1.01 */
         , <&gpio1 10 GPIO_ACTIVE_HIGH>   /* S1 -> P1.02 */
         , <&gpio1 15 GPIO_ACTIVE_HIGH>   /* S2 -> P1.07 */
         , <&gpio0 31 GPIO_ACTIVE_HIGH>   /* S3 -> P0.31 */
         ;
 };
-/* 2. ADC каналы для двух MUX */
+
+/* ============================================
+ * 3. ADC привязка к каналам (HE свичи)
+ * ============================================ */
 &kscan_adc_top {
-    io-channels = <&adc 0>;   /* MUX1 SIG -> P0.02 (AIN0) */
+    io-channels = <&adc 0>;   /* MUX1 SIG -> AIN0 (P0.02) */
     calibration-min = <2000>;
     calibration-max = <3000>;
 };
 
 &kscan_adc_bot {
-    io-channels = <&adc 5>;   /* MUX2 SIG -> P0.29 (AIN5) */
+    io-channels = <&adc 5>;   /* MUX2 SIG -> AIN5 (P0.29) */
     calibration-min = <2000>;
     calibration-max = <3000>;
 };
-&kscan_mech {
-   // Replace these comments with the GPIO pins in the matrix.
-        // See https://zmk.dev/docs/development/hardware-integration/new-shield#shield-overlays
-        compatible = "zmk,kscan-gpio-matrix";
-        diode-direction = "col2row";
-        wakeup-source;
-        col-gpios =
-            <&pro_micro 6 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 7 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 8 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 9 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 10 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 16 GPIO_ACTIVE_HIGH>,
-            <&pro_micro 14 GPIO_ACTIVE_HIGH>;
-            
-        row-gpios =
-            <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
-            <&pro_micro 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
-            <&pro_micro 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>,
-            <&pro_micro 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 
-};
-
-/* 2. Узел только для пинов S0-S3 мультиплексора (теперь это просто GPIO) */
-    kscan_mux_pins: kscan_mux_pins {
-        compatible = "zmk,kscan-gpio-direct";
-        // Эти пины будут использоваться драйвером kscan_adc для переключения каналов
-        col-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>, <&gpio1 5 GPIO_ACTIVE_HIGH>, <&gpio1 6 GPIO_ACTIVE_HIGH>, <&gpio1 7 GPIO_ACTIVE_HIGH>;
-    };
-
-    /* 3. ОБЪЕДИНЕННЫЙ СКАНЕР (Composite) */
-    kscan: kscan0 {
-        compatible = "zmk,kscan-composite";
-        wakeup-source;
-        rows = <4>;
-        columns = <7>;
-
-        /* Механическая часть */
-        gpio-matrix {
-            kscan = <&kscan_mech>;
-            row-offset = <0>;
-            col-offset = <0>;
-        };
-        /* HE часть */
-        adc-direct {
-            kscan = <&kscan_adc>;
-            row-offset = <0>;
-            col-offset = <0>;
-        };
-        /* Управление мультиплексором */
-        select-switches {
-            kscan = <&kscan_mux_pins>;
-            row-offset = <0>;
-            col-offset = <0>;
-        };
-    };
-
-/* 4. Пины управления включением мультиплексоров (EN) */
-&kscan_selector {
-    input-gpios
-            = 
-              <&gpio0 3 GPIO_ACTIVE_HIGH> // EN для U1 (P0.03)
-            , <&gpio0 2 GPIO_ACTIVE_HIGH> // EN для U2 (P0.02)
-            ;
-};
-
-/* 5. Активация всех функциональных узлов из dtsi */
-&central_listener {
-    status = "okay";
-};
-
-&raw_sp {
-    sample-div = <1>;
-};
-
-&he_transform {
-    status = "okay";
-};
-
-&he_keymap {
-    status = "okay";
-};
+/* ============================================
+ * 4. Активация функциональных узлов
+ * ============================================ */
+&central_listener { status = "okay"; };
+&he_transform    { status = "okay"; };
+&he_keymap       { status = "okay"; };
+&raw_sp          { sample-div = <1>; };
