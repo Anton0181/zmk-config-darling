@@ -97,7 +97,7 @@
         default-deadzone-bottom = <250>;
 
         /* MUX1: 14 каналов (0-13) */
-        mux0: mux@0 {
+        mux0: mux {
             io-channels = <&adc 0>;
             address-range-min = <0>;
             address-range-max = <13>;
@@ -105,7 +105,7 @@
         };
 
         /* MUX2: 14 каналов (0-13) */
-        mux1: mux@1 {
+        mux1: mux {
             io-channels = <&adc 5>;
             address-range-min = <0>;
             address-range-max = <13>;
