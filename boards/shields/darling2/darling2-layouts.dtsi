@@ -149,11 +149,11 @@
         type = "priority_deeper";
     };
 
-    ps: he_set_p {
-        compatible = "he,behavior-pulse-set";
-        #binding-cells = <1>;
-        pulse-set-forwarder = <&pulse_set_forwarder>;
-    };
+    // ps: he_set_p {
+    //     compatible = "he,behavior-pulse-set";
+    //     #binding-cells = <1>;
+    //     pulse-set-forwarder = <&pulse_set_forwarder>;
+    // };
 
     he_transform: he_transform {
         compatible = "zmk,matrix-transform";
