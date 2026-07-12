@@ -115,15 +115,14 @@
 
     /* ============================================
      * Композитный сканер
-     * Размеры 6×16 (для совместимости с MUX)
-     *   rows 0-3: мех-свичи (4×7)
-     *   rows 4-5: HE через MUX (2×16, но исп. только 14)
+     * Размеры 4×7 (для совместимости с MUX)
+     *   
      * ============================================ */
     kscan: kscan0 {
         compatible = "zmk,kscan-composite";
         wakeup-source;
-        rows = <6>;
-        columns = <16>;
+        rows = <4>;
+        columns = <7>;
 
         gpio-matrix {
             kscan = <&kscan_mech>;
@@ -158,13 +157,14 @@
 
     he_transform: he_transform {
         compatible = "zmk,matrix-transform";
-        columns = <16>;
-        rows = <2>;
+        columns = <7>;
+        rows = <4>;
         map = <
-            RC(0,0)  RC(0,1)  RC(0,2)  RC(0,3)  RC(0,4)  RC(0,5)  RC(0,6)  RC(0,7)
-            RC(0,8)  RC(0,9)  RC(0,10) RC(0,11) RC(0,12) RC(0,13) _______  _______
-            RC(1,0)  RC(1,1)  RC(1,2)  RC(1,3)  RC(1,4)  RC(1,5)  RC(1,6)  RC(1,7)
-            RC(1,8)  RC(1,9)  RC(1,10) RC(1,11) RC(1,12) RC(1,13) _______  _______
+           RC(0,0) RC(0,1) RC(0,2) RC(0,3) RC(0,4) RC(0,5) RC(0,6)
+        RC(1,0) RC(1,1) RC(1,2) RC(1,3) RC(1,4) RC(1,5) RC(1,6)
+        RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5) RC(2,6)
+        RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,4) RC(3,5) RC(3,6)
+             
         >;
     };
 
@@ -213,47 +213,38 @@
             , <&key_physical_attrs 100 100 550  200  0  0  0>
             , <&key_physical_attrs 100 100 650  200  0  0  0>
 
-            /* Row 2: shift, Z, X, C, V, B */
+            /* Row 2: shift, Z, X, C, V, B , N */
             , <&key_physical_attrs 100 100   50  300  0  0  0>
             , <&key_physical_attrs 100 100 150  300  0  0  0>
             , <&key_physical_attrs 100 100 250  300  0  0  0>
             , <&key_physical_attrs 100 100 350  300  0  0  0>
             , <&key_physical_attrs 100 100 450  300  0  0  0>
             , <&key_physical_attrs 100 100 550  300  0  0  0>
+            , <&key_physical_attrs 100 100 650  300  0  0  0>
 
-            /* Row 3: ctrl, alt, win, Up, Down */
+            /* Row 3: ctrl, alt, win, Up, Down, Space, Return */
             , <&key_physical_attrs 100 100   50  400  0  0  0>
             , <&key_physical_attrs 100 100 150  400  0  0  0>
             , <&key_physical_attrs 100 100 250  400  0  0  0>
             , <&key_physical_attrs 100 100 350  400  0  0  0>
             , <&key_physical_attrs 100 100 450  400  0  0  0>
+            , <&key_physical_attrs 100 100 550  400  0  0  0>
+            , <&key_physical_attrs 100 100 650  400  0  0  0>
 
-            /* Row 4: N (повёрнутая, 30° вокруг (650, 425)) */
-            , <&key_physical_attrs 100 100  650  350  3000  650  425>
-
-            /* Row 5: Space (x=-1), Return */
-            , <&key_physical_attrs 100 100  -50  450  0  0  0>
-            , <&key_physical_attrs 100 100   50  450  0  0  0>
+            
             ;
     };
 
     default_transform: default_transform {
         compatible = "zmk,matrix-transform";
-        columns = <16>;
-        rows = <6>;
+        columns = <7>;
+        rows = <4>;
         map = <
-            /* Row 0: 7 клавиш */
-            RC(0,0) RC(0,1) RC(0,2) RC(0,3) RC(0,4) RC(0,5) RC(0,6) _______ _______ _______ _______ _______ _______ _______ _______ _______
-            /* Row 1: 7 клавиш */
-            RC(1,0) RC(1,1) RC(1,2) RC(1,3) RC(1,4) RC(1,5) RC(1,6) _______ _______ _______ _______ _______ _______ _______ _______ _______
-            /* Row 2: 6 клавиш */
-            RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
-            /* Row 3: 5 клавиш */
-            RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,4) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
-            /* Row 4: 1 клавиша (N) */
-            RC(4,11) ______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
-            /* Row 5: 2 клавиши (Space, Return) */
-            RC(5,12) RC(5,13) _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______ _______
+            RC(0,0) RC(0,1) RC(0,2) RC(0,3) RC(0,4) RC(0,5) RC(0,6)
+            RC(1,0) RC(1,1) RC(1,2) RC(1,3) RC(1,4) RC(1,5) RC(1,6)
+            RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5) RC(2,6)
+            RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,4) RC(3,5) RC(3,6)
+            
         >;
     };
 };
