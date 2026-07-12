@@ -5,13 +5,13 @@
  * ============================================ */
 &kscan_mech {
     col-gpios
-        = <&pro_micro  6 GPIO_ACTIVE_HIGH>   /* COL 0 -> D6 = P0.11 */
-        , <&pro_micro  7 GPIO_ACTIVE_HIGH>   /* COL 1 -> D7 = P0.09 */
-        , <&pro_micro  8 GPIO_ACTIVE_HIGH>   /* COL 2 -> D8 = P0.10 */
-        , <&pro_micro 14 GPIO_ACTIVE_HIGH>   /* COL 3 -> D14 = P0.04 */
-        , <&pro_micro 15 GPIO_ACTIVE_HIGH>   /* COL 4 -> D15 = P0.05 */
-        , <&pro_micro 16 GPIO_ACTIVE_HIGH>   /* COL 5 -> D16 = P0.30 */
-        , <&pro_micro 10 GPIO_ACTIVE_HIGH>   /* COL 6 -> D10 = P0.27 */
+        = <&pro_micro  6 GPIO_ACTIVE_HIGH>   /* COL 0 -> D6 = P1.00 */
+        , <&pro_micro  7 GPIO_ACTIVE_HIGH>   /* COL 1 -> D7 = P0.11 */
+        , <&pro_micro  8 GPIO_ACTIVE_HIGH>   /* COL 2 -> D8 = P1.04 */
+        , <&pro_micro 9 GPIO_ACTIVE_HIGH>   /* COL 3 -> D9 = P1.06 */
+        , <&pro_micro 10 GPIO_ACTIVE_HIGH>   /* COL 4 -> D10 = P0.09 */
+        , <&pro_micro 16 GPIO_ACTIVE_HIGH>   /* COL 5 -> D16 = P0.10 */
+        , <&pro_micro 14 GPIO_ACTIVE_HIGH>   /* COL 6 -> D14 = P1.11 */
         ;
     row-gpios
         = <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
@@ -24,7 +24,7 @@
 /* ============================================
  * АДРЕСНЫЕ ПИНЫ MUX (S0-S3) - LSB -> MSB
  * ============================================ */
-&kscan_mux {
+/* &kscan_mux {
     address-gpios
         = <&pro_micro  9 GPIO_ACTIVE_HIGH>
         , <&pro_micro 12 GPIO_ACTIVE_HIGH>
@@ -32,6 +32,7 @@
         , <&pro_micro 18 GPIO_ACTIVE_HIGH>   /* S3 -> D18 = P0.31 */
         ;
 };
+*/
 
 /* ============================================
  * Активация
