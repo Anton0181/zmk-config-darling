@@ -5,12 +5,12 @@
 
 / {
     chosen {
-        zmk,kscan = &kscan;
+        zmk,kscan = &kscan_darling;
         zmk,physical-layout = &physical_layout0;
     };
 
     /* Мех-свичи 4×7 (28 кнопок) */
-    kscan: kscan0 {
+    kscan_darling: kscan_darling0 {
         compatible = "zmk,kscan-gpio-matrix";
         wakeup-source;
         diode-direction = "col2row";
@@ -20,7 +20,7 @@
     physical_layout0: physical_layout_0 {
         compatible = "zmk,physical-layout";
         display-name = "Darling3 Default";
-        kscan = <&kscan>;
+        kscan = <&kscan_darling>;
         transform = <&default_transform>;
         
         keys = 
