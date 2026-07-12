@@ -1,23 +1,14 @@
-// This file was generated from a template. Edit it to match your keyboard.
-// See https://zmk.dev/docs/development/hardware-integration/new-shield for more
-// instructions.
-
-#include <dt-bindings/zmk/matrix_transform.h>
-
 #include "darling3-layouts.dtsi"
 
-/ {
-    
-
-    &kscan_darling {
-       col-gpios
-        = <&pro_micro  6 GPIO_ACTIVE_HIGH>   /* COL 0 -> D6 = P1.00 */
-        , <&pro_micro  7 GPIO_ACTIVE_HIGH>   /* COL 1 -> D7 = P0.11 */
-        , <&pro_micro  8 GPIO_ACTIVE_HIGH>   /* COL 2 -> D8 = P1.04 */
-        , <&pro_micro 9 GPIO_ACTIVE_HIGH>   /* COL 3 -> D9 = P1.06 */
-        , <&pro_micro 10 GPIO_ACTIVE_HIGH>   /* COL 4 -> D10 = P0.09 */
-        , <&pro_micro 16 GPIO_ACTIVE_HIGH>   /* COL 5 -> D16 = P0.10 */
-        , <&pro_micro 14 GPIO_ACTIVE_HIGH>   /* COL 6 -> D14 = P1.11 */
+&kscan_darling {
+    col-gpios
+        = <&pro_micro  6 GPIO_ACTIVE_HIGH>
+        , <&pro_micro  7 GPIO_ACTIVE_HIGH>
+        , <&pro_micro  8 GPIO_ACTIVE_HIGH>
+        , <&pro_micro  9 GPIO_ACTIVE_HIGH>
+        , <&pro_micro 10 GPIO_ACTIVE_HIGH>
+        , <&pro_micro 16 GPIO_ACTIVE_HIGH>
+        , <&pro_micro 14 GPIO_ACTIVE_HIGH>
         ;
     row-gpios
         = <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
@@ -25,7 +16,4 @@
         , <&pro_micro 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
         , <&pro_micro 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
         ;
-    };
-
-    
 };
