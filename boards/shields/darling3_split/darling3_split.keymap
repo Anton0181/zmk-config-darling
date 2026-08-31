@@ -77,7 +77,7 @@
 
                 /* RIGHT */
                 &kp N7        &kp N8        &kp N9        &kp PLUS       &kp MINUS     &kp ASTERISK &kp FSLH
-                &kp N4        &kp N5        &kp N6        &kp KP_PLUS     &kp KP_MINUS   &kp KP_MULTIPLY &kp KP_DIVIDE
+                &kp N4        &kp N5        &kp N6        &kp KP_PLUS     &kp KP_MINUS   &kp STAR &kp FSLH
                 &kp N1        &kp N2        &kp N3        &kp DOT         &kp N0        &kp EQUAL     &kp BSPC
                 &trans        &trans        &trans        &trans          &trans        &kp RET       &trans
             >;
