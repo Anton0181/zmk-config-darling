@@ -19,8 +19,11 @@
 #
 ---
 include:
-
   - board: nice_nano_v2
-    shield: corne_left
+    shield: darling3_split_left
   - board: nice_nano_v2
-    shield: corne_right
+    shield: darling3_split_right
+  # - board: nice_nano_v2
+  #   shield: corne_left
+  # - board: nice_nano_v2
+  #   shield: corne_right
