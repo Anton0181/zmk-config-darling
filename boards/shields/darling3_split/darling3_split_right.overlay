@@ -2,7 +2,7 @@
 // See https://zmk.dev/docs/development/hardware-integration/new-shield for more
 // instructions.
 
-#include "darling3_split.dtsi"
+#include "darling3_split-layouts.dtsi"
 
 &default_transform {
     // Set this to the number of columns on the left side.
